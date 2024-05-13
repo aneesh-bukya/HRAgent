@@ -1,7 +1,7 @@
-Candidate Name: John
-- John demonstrated a deep understanding of the Data Analyst role
-- John showcased technical prowess and analytical acumen
-- John mastered data analysis tools like Python and SQL
-- John streamlined data extraction processes resulting in a 20% reduction in reporting time
-- John identified data anomalies and optimized a marketing campaign, boosting ROI by 15%
-- John expressed interest in expanding his knowledge of advanced statistical modeling techniques, like machine learning algorithms
+Candidate Name : John 
+- Deep understanding of Data Analyst role
+- Skilled in Python, SQL, and data analysis
+- Boosted ROI by 15% in a project
+- Seeks to grow in statistical modeling
+- Interested in industry-specific data sets
+- Aims for certifications like CAP

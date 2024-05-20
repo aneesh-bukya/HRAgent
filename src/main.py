@@ -2,7 +2,6 @@ import os
 import smtplib
 import ssl
 from email.message import EmailMessage
-import csv
 from textwrap import dedent
 from dotenv import load_dotenv
 from crewai import Crew, Agent, Task, Process
@@ -18,7 +17,7 @@ doc_search = DOCXSearchTool("docs/Employee-Code-of-Conduct.docx")
 csv_search = CSVSearchTool('interview_data.csv')
 google_search = SerperDevTool()
 # ##########################This is for the FAQ Section ######################################################
-print("Welcome to FAQ Section of Company XYZ! I'm here to clarify any questions regarding our company's policies. ")
+print("Welcome to FAQ Chatbot of Company XYZ! I'm here to clarify any questions regarding our company's policies. ")
 print("----------------------------------------------------------------------------------------------------")
 asked_question = input("Ask your question: ")
 
@@ -201,40 +200,3 @@ print("####################################")
 
 
 
-
-
-
-
-
-
-# class InterviewTools():
-#     @tool("checks if the interview is available")
-#     def check_interview_availability(requested_date: str, requested_time: str, file_path: str):
-#         """
-#         Check if the requested interview date and time are available.
-
-#         Parameters:
-#         - requested_date (str): The requested date in 'MM-DD' format.
-#         - requested_time (str): The requested time in 'HH:MM AM/PM' format.
-#         - file_path (str): The path to the CSV file containing interview schedules.
-        
-#         Returns:
-#         - bool: True if the interview is available, False otherwise.
-#         """
-#         with open(file_path, 'r') as file:
-#             reader = csv.DictReader(file)
-#             for row in reader:
-#                 interview_date = datetime.strptime(row['Date'], '%m-%d')
-#                 interview_time = datetime.strptime(row['Time'], '%I:%M %p').time()
-#                 interview_datetime = datetime.combine(interview_date.date(), interview_time)
-
-#                 # Check if the requested date matches an existing date
-#                 if interview_date.strftime('%m-%d') == requested_date:
-#                     requested_datetime = datetime.combine(interview_date.date(), datetime.strptime(requested_time, '%I:%M %p').time())
-#                     # Check if the requested time matches an existing time
-#                     if interview_datetime.time() == requested_datetime.time():
-#                         return False
-#                     # Check if the requested time is within one hour of an existing time
-#                     elif abs(requested_datetime - interview_datetime) <= timedelta(hours=1):
-#                         return False
-#         return True

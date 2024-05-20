@@ -24,12 +24,11 @@ from dotenv import load_dotenv
 from crewai import Crew, Agent, Task, Process
 from datetime import datetime, timedelta
 from crewai_tools import DOCXSearchTool, CSVSearchTool, TXTSearchTool, tool, SerperDevTool
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-
-os.environ["OPENAI_API_KEY"] = "sk-proj-1j0rI4ujwFua7rWGytDlT3BlbkFJwHncuWCnnYZADHHSAkrw"
-os.environ["SERPER_API_KEY"] = "d1b04924fa8092b742ea783991626a950f1a0c1a"
-os.environ['OPENAI_MODEL_NAME'] =  "gpt-4-0125-preview"
 google_search = SerperDevTool()
 
 def homepage(request):

@@ -15,16 +15,22 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.core.files.storage import default_storage
-from crewai import Crew, Agent, Task, Process
-from textwrap import dedent
-from crewai_tools import TXTSearchTool
 import os
+import smtplib
+import ssl
+from email.message import EmailMessage
+from textwrap import dedent
+from dotenv import load_dotenv
+from crewai import Crew, Agent, Task, Process
+from datetime import datetime, timedelta
+from crewai_tools import DOCXSearchTool, CSVSearchTool, TXTSearchTool, tool, SerperDevTool
 
 
 
 os.environ["OPENAI_API_KEY"] = "sk-proj-1j0rI4ujwFua7rWGytDlT3BlbkFJwHncuWCnnYZADHHSAkrw"
 os.environ["SERPER_API_KEY"] = "d1b04924fa8092b742ea783991626a950f1a0c1a"
 os.environ['OPENAI_MODEL_NAME'] =  "gpt-4-0125-preview"
+google_search = SerperDevTool()
 
 def homepage(request):
   return render(request,'home.html')
@@ -87,3 +93,247 @@ def summarize_notes(request):
         return JsonResponse({'summary': result})
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@csrf_exempt
+def process_form(request):
+    if request.method == 'POST':
+        question = request.POST.get('question')
+        uploaded_file = request.FILES.get('document')
+
+        if not question or not uploaded_file:
+            return JsonResponse({'summary': 'Please provide both a question and a document.'}, status=400)
+
+        # Save the uploaded file to a temporary location
+        file_path = default_storage.save(f'temp/{uploaded_file.name}', uploaded_file)
+
+        try:
+            # Create an instance of DOCXSearchTool with the document
+            doc_search = DOCXSearchTool(file_path)
+
+            faq_agent = Agent(
+                role='Human Resource Employee',
+                goal='Find the section of the document which contains relevant information and summarize them.',
+                tools=[doc_search],
+                backstory=dedent("""\
+                    As a HR Employee, your mission is to find which sections of the document contains the
+                    relevant information and summarize those in a few sentences. If you can't find any keywords then just say 
+                    I couldn't find anything in our company's policy regarding this topic. Kindly 
+                    contact HR for information on this topic."""),
+                verbose=True
+            )
+
+            def summary_task(question):
+                return Task(
+                    description=dedent(f"""\
+                        Find all the relevant areas of the document where the words from the question appear and
+                        summarize them in a few sentences.
+                        Question: {question}"""),
+                    expected_output=dedent("""\
+                        A few sentences summarizing the relevant information in the document which 
+                        contains the keyword asked in the question. Starts each answer with Our company
+                        policy states that."""),
+                    agent=faq_agent
+                )
+
+            summarize_task = summary_task(question)
+
+            crew = Crew(agents=[faq_agent], tasks=[summarize_task])
+            result = crew.kickoff()
+
+            return JsonResponse({'summary': result})
+
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+    return JsonResponse({'summary': 'Invalid request method.'}, status=405)
+
+def onboarding_form(request):
+    email_sent = False
+
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        role = request.POST.get('role')
+        email = request.POST.get('email')
+        code_of_conduct = request.POST.get('codeOfConduct')
+
+        # Define the agents and tasks
+        researcher_agent = Agent(
+            role="Research Specialist",
+            goal='Research the role to find the best practices for the job role and provide links on how to be successful ',
+            tools=[google_search],
+            backstory=dedent("""\
+                As a Research Specialist, your job is to search the web and come up with the best practices and methods
+                to be successful at a specific job role and also provide useful links which talk about how to be successful
+                in the partciular job role."""),
+            verbose=True
+        )
+
+        greet_agent = Agent(
+            role="Personalized Message Sender",
+            goal='Write a personalized message to person and welcome them into the company ',
+            backstory=dedent("""\
+                Your job is to write a personalized message to the new employee joining the company and talk about company culture and wish
+                the employee success in the company"""),
+            verbose=True
+        )
+
+        def research_task(role):
+            return Task(
+                description=dedent(f"""\
+                    generate the best practices and ways a person can successful at the given job role
+                    Job Role: {role}"""),
+                expected_output=dedent("""\
+                    The best practices and things to do to be successful at the job role along with useful links for reference"""),
+                agent=researcher_agent,
+            )
+
+        set_research_task = research_task(role)
+
+        def onboard_task(name, link):
+            return Task(
+                description=dedent(f"""\
+                    onboard the people by wishing good luck and ask them to review the code of conduct
+                    Employee Code of Conduct Link: {link},
+                    Name: {name}"""),
+                expected_output=dedent("""\
+                    Output should be formatted like this:
+                    - Greeting and well wishes 
+                    - Ask to review Employee Code of Conduct with link 
+                    - Best Practices to be successful along with links
+                    - end it with
+                    Best Regards,
+                    John McEnroe,
+                    HR of Company XYZ"""),
+                agent=greet_agent,
+                context=[set_research_task]
+            )
+
+        set_onboard_task = onboard_task(name, link=code_of_conduct)
+
+        # Crew setup and kickoff
+        crew = Crew(agents=[researcher_agent, greet_agent], tasks=[set_research_task, set_onboard_task])
+        result = crew.kickoff()
+
+        # Define email sender and receiver
+        email_sender = 'aneeshbsri@gmail.com'
+        email_password = "rsds xytr dtgz xrme"
+        email_receiver = email
+
+        # Set the subject and body of the email
+        subject = 'Welcome to Company XYZ!!!'
+        body = result
+
+        em = EmailMessage()
+        em['From'] = email_sender
+        em['To'] = email_receiver
+        em['Subject'] = subject
+        em.set_content(body)
+
+        # Add SSL (layer of security)
+        context = ssl.create_default_context()
+
+        # Log in and send the email
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+            smtp.login(email_sender, email_password)
+            smtp.sendmail(email_sender, email_receiver, em.as_string())
+
+        email_sent = True
+
+    return render(request, 'onboarding_form.html', {'email_sent': email_sent})
+
+
+@csrf_exempt
+def onboarding_submit(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        role = request.POST.get('role')
+        email = request.POST.get('email')
+        code_of_conduct = request.POST.get('codeOfConduct')
+
+        # Define your agents, tasks, and crew as per your requirements
+        researcher_agent = Agent(
+            role="Research Specialist",
+            goal='Research the role to find the best practices for the job role and provide links on how to be successful ',
+            tools=[google_search],
+            backstory=dedent("""\
+              As a Research Specialist, your job is to search the web and come up with the best practices and methods
+              to be successful at a specific job role and also provide useful links which talk about how to be successful
+              in the particular job role."""),
+            verbose=True
+        )
+
+        def research_task(role):
+            return Task(
+                description=dedent(f"""\
+                    generate the best practices and ways a person can successful at the given job role
+                    Job Role: {role}"""),
+                expected_output=dedent("""\
+                    The best practices and things to do to be successful at the job role along with useful links for reference"""),
+                agent=researcher_agent,
+            )
+
+        set_research_task = research_task(role)
+
+        greet_agent = Agent(
+            role="Personalized Message Sender",
+            goal='Write a personalized message to person and welcome them into the company ',
+            backstory=dedent("""\
+              Your job is to write a personalized message to the new employee joining the company and talk about company culture and wish
+              the employee success in the company"""),
+            verbose=True
+        )
+
+        def onboard_task(name, link):
+            return Task(
+                description=dedent(f"""\
+                    onboard the people by wishing good luck and ask them to review the code of conduct
+                    Employee Code of Conduct Link: {link},
+                    Name: {name}"""),
+                expected_output=dedent("""\
+                    Output should be formatted like this:
+                    - Greeting and well wishes 
+                    - Ask to review Employee Code of Conduct with link 
+                    - Best Practices to be successful along with links
+                    - end it with
+                    Best Regards,
+                    John McEnroe,
+                    HR of Company XYZ"""),
+                agent=greet_agent,
+                context=[set_research_task]
+            )
+
+        set_onboard_task = onboard_task(name, link=code_of_conduct)
+
+        crew = Crew(agents=[researcher_agent, greet_agent], tasks=[set_research_task, set_onboard_task])
+        # Get your crew to work!
+        result = crew.kickoff()
+
+        # Define email sender and receiver
+        email_sender = 'aneeshbsri@gmail.com'
+        email_password = "rsds xytr dtgz xrme"
+        email_receiver = email
+
+        # Set the subject and body of the email
+        subject = 'Welcome to Company XYZ!!!'
+        body = result
+
+        em = EmailMessage()
+        em['From'] = email_sender
+        em['To'] = email_receiver
+        em['Subject'] = subject
+        em.set_content(body)
+
+        # Add SSL (layer of security)
+        context = ssl.create_default_context()
+
+        # Log in and send the email
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+            smtp.login(email_sender, email_password)
+            smtp.sendmail(email_sender, email_receiver, em.as_string())
+
+        # Returning a JSON response indicating success
+        return JsonResponse({'message': 'Email sent successfully!', 'result': result})
+    else:
+        return JsonResponse({'message': 'Invalid request method!'}, status=400)

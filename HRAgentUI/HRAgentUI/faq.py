@@ -1,7 +1,4 @@
 import os
-import smtplib
-import ssl
-from email.message import EmailMessage
 import csv
 from textwrap import dedent
 from dotenv import load_dotenv
@@ -14,13 +11,13 @@ from crewai_tools import DOCXSearchTool, CSVSearchTool, TXTSearchTool, tool, Ser
 os.environ["OPENAI_API_KEY"] = "sk-proj-iMq8aB6ABRhHHgQod4p4T3BlbkFJvI2j87hwAF6wlmb8EKi3"
 os.environ["SERPER_API_KEY"] = "d1b04924fa8092b742ea783991626a950f1a0c1a" # serper.dev API key
 os.environ['OPENAI_MODEL_NAME'] =  "gpt-4-0125-preview"   
-doc_search = DOCXSearchTool("docs/Employee-Code-of-Conduct.docx")
 csv_search = CSVSearchTool('interview_data.csv')
 google_search = SerperDevTool()
 # ##########################This is for the FAQ Section ######################################################
-print("Welcome to FAQ Chatbot of Company XYZ! I'm here to clarify any questions regarding our company's policies. ")
-print("----------------------------------------------------------------------------------------------------")
-asked_question = input("Ask your question: ")
+
+asked_question =  input("What is the question you would like to ask: ")
+company_file = ""
+doc_search = DOCXSearchTool(company_file)
 
 faq_agent = Agent(
 			role='Human Resource Employee',

@@ -43,6 +43,16 @@ input[type="file"] {
   background-color: #fff; /* White background */
 }
 
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd; /* Light border */
+  border-radius: 5px;
+  background-color: #fff; /* White background */
+  height: 200px;
+}
+
 button {
   padding: 10px 20px;
   background-color: #007bff; /* Blue button */
@@ -57,24 +67,6 @@ button:hover {
   background-color: #0056b3; /* Darker blue on hover */
 }
 
-#result {
-  margin-top: 20px;
-}
-
-textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd; /* Light border */
-  border-radius: 5px;
-  background-color: #fff; /* White background */
-  height: 200px;
-}
-
-.hidden {
-  display: none;
-}
-
 #notesForm button {
   margin-right: 10px;
 }
@@ -85,4 +77,19 @@ button#addAnotherCandidate {
 
 button#clearAll {
   background-color: #dc3545; /* Red button */
+}
+
+#result {
+  margin-top: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+#loadingMessage {
+  font-size: 18px;
+  color: #007bff; /* Blue text color */
+  text-align: center;
+  margin-top: 20px;
 }

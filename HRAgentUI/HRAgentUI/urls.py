@@ -26,5 +26,7 @@ urlpatterns = [
     path('email-onboarding/',views.onboarding),
     path('candidate-notes/',views.candidate_notes),
     path('summarize-notes/', views.summarize_notes, name='summarize_notes'),
+    path('process_form/', views.process_form, name='process_form'),
+    path('onboarding-submit/',views.onboarding_submit, name='onboarding_submit'),
 
 ]

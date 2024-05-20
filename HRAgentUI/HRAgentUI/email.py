@@ -73,7 +73,7 @@ def onboard_task(name,link):
             agent=greet_agent,
             context = [set_research_task]
         )
-set_onboard_task = onboard_task(name,"https://resources.workable.com/employee-code-of-conduct-company-policy")
+set_onboard_task = onboard_task(name,link="")
 
 crew = Crew(agents=[researcher_agent,greet_agent], tasks=[set_research_task,set_onboard_task])
 # Get your crew to work!

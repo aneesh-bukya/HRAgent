@@ -11,8 +11,20 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import FileSystemStorage
-import subprocess
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.core.files.storage import default_storage
+from crewai import Crew, Agent, Task, Process
+from textwrap import dedent
+from crewai_tools import TXTSearchTool
+import os
 
+
+
+os.environ["OPENAI_API_KEY"] = "sk-proj-1j0rI4ujwFua7rWGytDlT3BlbkFJwHncuWCnnYZADHHSAkrw"
+os.environ["SERPER_API_KEY"] = "d1b04924fa8092b742ea783991626a950f1a0c1a"
+os.environ['OPENAI_MODEL_NAME'] =  "gpt-4-0125-preview"
 
 def homepage(request):
   return render(request,'home.html')
@@ -32,19 +44,46 @@ def onboarding(request):
 
 @csrf_exempt
 def summarize_notes(request):
-    if request.method == 'POST' and request.FILES['notesFile']:
+    if request.method == 'POST':
+        candidate_name = request.POST['candidateName']
         notes_file = request.FILES['notesFile']
-        fs = FileSystemStorage()
-        filename = fs.save(notes_file.name, notes_file)
-        file_path = fs.path(filename)
+        file_path = default_storage.save('tmp/' + notes_file.name, notes_file)
 
-        # Run the notes.py script and capture the output
-        try:
-            result = subprocess.run(['python3', 'notes.py', file_path], capture_output=True, text=True)
-            summary = result.stdout
-        except Exception as e:
-            summary = str(e)
+        txt_search = TXTSearchTool(file_path)
 
-        return JsonResponse({'summary': summary})
+        notes_agent = Agent(
+            role="Candidate Notes Summarizer",
+            goal='Summarizes the notes on a candidate',
+            backstory=dedent("""\
+                As a Notes Summarizer, your mission is to read through the entire file
+                and summarize the information in a concise yet informative manner into bullet points."""),
+            tools=[txt_search],
+            verbose=True
+        )
+
+        def candidate_notes_task(name):
+            return Task(
+                description=dedent(f"""\
+                    Summarize the document into a few detailed bullet points
+                    Candidate Name: {name}"""),
+                expected_output=dedent("""\
+                    Ensure each bullet point isn't longer than 80 characters
+                    Have a list of 5-6 bullet points on notes given about the candidate
+                    Use this format for your output:
+                    Candidate Name : [Candidate Name]
+                    - Candidate notes"""),
+                agent=notes_agent,
+            )
+
+        candidate_task = candidate_notes_task(candidate_name)
+
+        crew = Crew(agents=[notes_agent], tasks=[candidate_task])
+        result = crew.kickoff()
+        print(result)
+
+        # Clean up the temporary file
+        os.remove(file_path)
+
+        return JsonResponse({'summary': result})
 
     return JsonResponse({'error': 'Invalid request'}, status=400)

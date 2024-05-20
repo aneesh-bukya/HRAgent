@@ -25,4 +25,6 @@ urlpatterns = [
     path('faq/',views.faq_agent),
     path('email-onboarding/',views.onboarding),
     path('candidate-notes/',views.candidate_notes),
+    path('summarize-notes/', views.summarize_notes, name='summarize_notes'),
+
 ]

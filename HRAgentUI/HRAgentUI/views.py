@@ -22,7 +22,6 @@ from email.message import EmailMessage
 from textwrap import dedent
 from dotenv import load_dotenv
 from crewai import Crew, Agent, Task, Process
-from datetime import datetime, timedelta
 from crewai_tools import DOCXSearchTool, CSVSearchTool, TXTSearchTool, tool, SerperDevTool
 from dotenv import load_dotenv
 

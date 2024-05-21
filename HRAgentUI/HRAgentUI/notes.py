@@ -35,7 +35,7 @@ notes_agent = Agent(
         tools=[txt_search],
         verbose=True
       )
-
+# Define the task
 def candidate_notes_task(name):
         return Task(
             description=dedent(f"""\

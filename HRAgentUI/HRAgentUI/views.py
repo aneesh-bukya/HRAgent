@@ -22,6 +22,7 @@ from email.message import EmailMessage
 from textwrap import dedent
 from dotenv import load_dotenv
 from crewai import Crew, Agent, Task, Process
+from datetime import datetime, timedelta
 from crewai_tools import DOCXSearchTool, CSVSearchTool, TXTSearchTool, tool, SerperDevTool
 from dotenv import load_dotenv
 
@@ -120,6 +121,7 @@ def process_form(request):
                 verbose=True
             )
 
+
             def summary_task(question):
                 return Task(
                     description=dedent(f"""\
@@ -127,9 +129,9 @@ def process_form(request):
                         summarize them in a few sentences.
                         Question: {question}"""),
                     expected_output=dedent("""\
-                        A few sentences summarizing the relevant information in the document which 
+                        Give a single conclusive answer using the relevant information in the document which 
                         contains the keyword asked in the question. Starts each answer with Our company
-                        policy states that."""),
+                        policy states that. """),
                     agent=faq_agent
                 )
 

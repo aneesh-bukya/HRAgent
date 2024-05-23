@@ -11,12 +11,10 @@
     <div class="container">
         <h1>Welcome to FAQ Chatbot</h1>
         <p>I'm here to clarify any questions regarding our company's policies.</p>
-        <form id="chatbotForm" enctype="multipart/form-data" method="post">
+        <form id="chatbotForm" method="post">
             {% csrf_token %}
             <label for="question">Ask your question:</label>
             <input type="text" id="question" name="question" required>
-            <label for="document">Upload company document (DOCX):</label>
-            <input type="file" id="document" name="document" accept=".docx">
             <button type="submit">Submit</button>
             <button type="button" id="clearButton">Clear</button>
         </form>
@@ -51,7 +49,6 @@
 
         document.getElementById('clearButton').addEventListener('click', function() {
             document.getElementById('question').value = '';
-            document.getElementById('document').value = '';
             document.getElementById('summaryText').textContent = '';
             document.getElementById('statusMessage').textContent = '';
         });
